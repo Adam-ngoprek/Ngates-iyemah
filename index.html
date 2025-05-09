@@ -2,60 +2,52 @@
 <html>
 <head>
   <title>Catatan Firebase</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, button { padding: 10px; margin: 5px 0; }
-    .catatan { margin-top: 20px; }
-  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9mNGGO6hi3yaGAyqUdbNCLcv5V2fHXpw",
+      authDomain: "uplon-b1497.firebaseapp.com",
+      projectId: "uplon-b1497",
+      storageBucket: "uplon-b1497.appspot.com", // <- ini dibetulin ya
+      messagingSenderId: "713445325325",
+      appId: "1:713445325325:web:a779c05ccb9dd77ede7344",
+      measurementId: "G-TSXH56KFBZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    window.kirimCatatan = async function () {
+      const isi = document.getElementById("isi").value;
+      if (isi.trim() !== "") {
+        await addDoc(collection(db, "catatan"), {
+          isi: isi,
+          waktu: new Date()
+        });
+        document.getElementById("isi").value = "";
+      }
+    };
+
+    const q = query(collection(db, "catatan"), orderBy("waktu", "desc"));
+    onSnapshot(q, (snapshot) => {
+      const daftar = document.getElementById("daftarCatatan");
+      daftar.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        daftar.innerHTML += `<p>- ${data.isi}</p>`;
+      });
+    });
+  </script>
 </head>
 <body>
   <h2>Tulis Catatan</h2>
   <input id="isi" type="text" placeholder="Tulis sesuatu..." />
   <button onclick="kirimCatatan()">Kirim</button>
 
-  <div class="catatan" id="daftarCatatan"></div>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD9mNGGO6hi3yaGAyqUdbNCLcv5V2fHXpw",
-      authDomain: "uplon-b1497.firebaseapp.com",
-      projectId: "uplon-b1497",
-      storageBucket: "uplon-b1497.firebasestorage.app",
-      messagingSenderId: "713445325325",
-      appId: "1:713445325325:web:a779c05ccb9dd77ede7344",
-      measurementId: "G-TSXH56KFBZ"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    function kirimCatatan() {
-      const isi = document.getElementById("isi").value;
-      if (isi.trim() !== "") {
-        db.collection("catatan").add({
-          isi: isi,
-          waktu: new Date()
-        }).then(() => {
-          document.getElementById("isi").value = "";
-          ambilCatatan();
-        });
-      }
-    }
-
-    function ambilCatatan() {
-      db.collection("catatan").orderBy("waktu", "desc").onSnapshot(snapshot => {
-        const daftar = document.getElementById("daftarCatatan");
-        daftar.innerHTML = "";
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          daftar.innerHTML += `<p>- ${data.isi}</p>`;
-        });
-      });
-    }
-
-    ambilCatatan();
-  </script>
+  <div id="daftarCatatan"></div>
 </body>
 </html>
