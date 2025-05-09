@@ -1,53 +1,136 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Catatan Firebase</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <title>Tap Tap Skor</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    #tapButton {
+      width: 200px;
+      height: 200px;
+      font-size: 24px;
+      border: none;
+      border-radius: 100px;
+      background-color: gray;
+      color: white;
+      margin-top: 20px;
+    }
+    #leaderboard {
+      margin-top: 20px;
+    }
+    .leaderboard-entry {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="nameInputSection">
+    <h2>Masukkan Namamu:</h2>
+    <input type="text" id="playerName" placeholder="Nama kamu" />
+    <button onclick="startGame()">Mulai</button>
+  </div>
 
+  <div id="gameSection" style="display: none;">
+    <h1>Skor: <span id="score">0</span></h1>
+    <button id="tapButton">TAP!</button>
+    <button onclick="showLeaderboard()">Lihat Leaderboard</button>
+  </div>
+
+  <div id="leaderboard" style="display: none;">
+    <h2>Leaderboard</h2>
+    <div id="leaderboardList"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // GANTI CONFIG INI PAKAI PUNYAMU
     const firebaseConfig = {
       apiKey: "AIzaSyD9mNGGO6hi3yaGAyqUdbNCLcv5V2fHXpw",
       authDomain: "uplon-b1497.firebaseapp.com",
       projectId: "uplon-b1497",
-      storageBucket: "uplon-b1497.appspot.com", // <- ini dibetulin ya
+      storageBucket: "uplon-b1497.appspot.com",
       messagingSenderId: "713445325325",
-      appId: "1:713445325325:web:a779c05ccb9dd77ede7344",
-      measurementId: "G-TSXH56KFBZ"
+      appId: "1:713445325325:web:a779c05ccb9dd77ede7344"
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
+    const db = getDatabase(app);
 
-    window.kirimCatatan = async function () {
-      const isi = document.getElementById("isi").value;
-      if (isi.trim() !== "") {
-        await addDoc(collection(db, "catatan"), {
-          isi: isi,
-          waktu: new Date()
+    // Variabel global
+    let score = 0;
+    let isGray = true;
+    let player = "";
+
+    window.startGame = () => {
+      const nameInput = document.getElementById("playerName").value.trim();
+      if (!nameInput) return alert("Isi nama dulu!");
+
+      player = nameInput;
+      localStorage.setItem("playerName", player);
+
+      document.getElementById("nameInputSection").style.display = "none";
+      document.getElementById("gameSection").style.display = "block";
+    };
+
+    const scoreEl = document.getElementById('score');
+    const button = document.getElementById('tapButton');
+
+    button.addEventListener('click', () => {
+      score++;
+      scoreEl.textContent = score;
+
+      isGray = !isGray;
+      button.style.backgroundColor = isGray ? 'gray' : 'black';
+
+      // Simpan ke Firebase
+      if (player) {
+        set(ref(db, "scores/" + player), {
+          name: player,
+          score: score
         });
-        document.getElementById("isi").value = "";
+      }
+    });
+
+    // Fungsi ambil leaderboard
+    const loadLeaderboard = async () => {
+      const leaderboardList = document.getElementById('leaderboardList');
+      const scoresRef = ref(db, 'scores');
+      const snapshot = await get(scoresRef);
+
+      if (snapshot.exists()) {
+        const scoresData = snapshot.val();
+        const leaderboard = [];
+
+        // Push data skor ke array
+        for (const player in scoresData) {
+          leaderboard.push(scoresData[player]);
+        }
+
+        // Urutkan berdasarkan skor tertinggi
+        leaderboard.sort((a, b) => b.score - a.score);
+
+        // Tampilkan leaderboard
+        leaderboardList.innerHTML = "";
+        leaderboard.forEach((entry, index) => {
+          const entryElement = document.createElement('div');
+          entryElement.classList.add('leaderboard-entry');
+          entryElement.innerHTML = `${index + 1}. ${entry.name} - Skor: ${entry.score}`;
+          leaderboardList.appendChild(entryElement);
+        });
+      } else {
+        leaderboardList.innerHTML = "Belum ada skor!";
       }
     };
 
-    const q = query(collection(db, "catatan"), orderBy("waktu", "desc"));
-    onSnapshot(q, (snapshot) => {
-      const daftar = document.getElementById("daftarCatatan");
-      daftar.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        daftar.innerHTML += `<p>- ${data.isi}</p>`;
-      });
-    });
+    // Fungsi untuk menampilkan leaderboard
+    window.showLeaderboard = () => {
+      document.getElementById("gameSection").style.display = "none";
+      document.getElementById("leaderboard").style.display = "block";
+      loadLeaderboard();
+    };
   </script>
-</head>
-<body>
-  <h2>Tulis Catatan</h2>
-  <input id="isi" type="text" placeholder="Tulis sesuatu..." />
-  <button onclick="kirimCatatan()">Kirim</button>
-
-  <div id="daftarCatatan"></div>
 </body>
 </html>
