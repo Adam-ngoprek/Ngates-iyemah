@@ -1,89 +1,61 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aku Ganteng?</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            background: linear-gradient(135deg, #6a11cb, #2575fc); /* Warna gradasi futuristik */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-        .container {
-            text-align: center;
-            background-color: rgba(0, 0, 0, 0.7); /* Background semi-transparan */
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            margin: 15px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            outline: none;  /* Pastikan tidak ada outline saat tombol difokuskan */
-        }
-        #iyaBtn {
-            background: #607D8B; /* Abu-abu kebiruan */
-            color: white;
-        }
-        #tidakBtn {
-            background: #B0BEC5; /* Abu-abu terang */
-            color: white;
-        }
-        button:hover {
-            transform: scale(1.1);
-        }
-        /* Menghapus semua efek saat tombol ditekan */
-        button:active {
-            transform: scale(1); /* Tidak ada perubahan ukuran saat ditekan */
-            box-shadow: none;    /* Tidak ada bayangan */
-        }
-        /* Menghapus efek fokus yang terjadi setelah tombol ditekan */
-        button:focus {
-            outline: none; /* Menghilangkan outline saat tombol mendapatkan fokus */
-        }
-    </style>
+  <title>Catatan Firebase</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, button { padding: 10px; margin: 5px 0; }
+    .catatan { margin-top: 20px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Aku ganteng gak?</h1>
-        <button id="iyaBtn">Iya</button>
-        <button id="tidakBtn">Tidak</button>
-    </div>
+  <h2>Tulis Catatan</h2>
+  <input id="isi" type="text" placeholder="Tulis sesuatu..." />
+  <button onclick="kirimCatatan()">Kirim</button>
 
-    <script>
-        const tidakBtn = document.getElementById("tidakBtn");
-        const iyaBtn = document.getElementById("iyaBtn");
+  <div class="catatan" id="daftarCatatan"></div>
 
-        // Fungsi untuk membuat tombol "Tidak" bergerak
-        tidakBtn.addEventListener("click", function() {
-            let randomX = Math.floor(Math.random() * (window.innerWidth - 100)); // Mengatur posisi acak pada sumbu X
-            let randomY = Math.floor(Math.random() * (window.innerHeight - 50)); // Mengatur posisi acak pada sumbu Y
-            tidakBtn.style.position = 'absolute';
-            tidakBtn.style.left = randomX + 'px';
-            tidakBtn.style.top = randomY + 'px';
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9mNGGO6hi3yaGAyqUdbNCLcv5V2fHXpw",
+      authDomain: "uplon-b1497.firebaseapp.com",
+      projectId: "uplon-b1497",
+      storageBucket: "uplon-b1497.firebasestorage.app",
+      messagingSenderId: "713445325325",
+      appId: "1:713445325325:web:a779c05ccb9dd77ede7344",
+      measurementId: "G-TSXH56KFBZ"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function kirimCatatan() {
+      const isi = document.getElementById("isi").value;
+      if (isi.trim() !== "") {
+        db.collection("catatan").add({
+          isi: isi,
+          waktu: new Date()
+        }).then(() => {
+          document.getElementById("isi").value = "";
+          ambilCatatan();
         });
+      }
+    }
 
-        // Fungsi untuk menampilkan pesan ketika "Iya" ditekan
-        iyaBtn.addEventListener("click", function() {
-            alert("Tkyu!");
+    function ambilCatatan() {
+      db.collection("catatan").orderBy("waktu", "desc").onSnapshot(snapshot => {
+        const daftar = document.getElementById("daftarCatatan");
+        daftar.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          daftar.innerHTML += `<p>- ${data.isi}</p>`;
         });
-    </script>
+      });
+    }
+
+    ambilCatatan();
+  </script>
 </body>
 </html>
